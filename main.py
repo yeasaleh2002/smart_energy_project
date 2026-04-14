@@ -7,7 +7,7 @@ import uvicorn
 
 app = FastAPI(title="Smart Energy API")
 
-# CORS Setup (Jate Frontend connect korte pare)
+# CORS Setup (Frontend connect)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,7 +21,7 @@ scaler = joblib.load('scaler.pkl')
 encoders = joblib.load('encoders.pkl')
 feature_names = joblib.load('feature_names.pkl')
 
-# Input schema define kora
+# Input schema define
 class EnergyData(BaseModel):
     building_type: str
     city_zone: str
@@ -36,10 +36,10 @@ class EnergyData(BaseModel):
 
 @app.post("/predict")
 def predict_risk(data: EnergyData):
-    # Dict theke Dataframe toiri
+    # Dataframe from Dict
     df = pd.DataFrame([data.dict()])
     
-    # Text data encode kora
+    # Text data encode 
     for col in ['building_type', 'city_zone', 'peak_hour']:
         df[col] = encoders[col].transform(df[col])
     
@@ -52,7 +52,7 @@ def predict_risk(data: EnergyData):
     # Predict
     prediction_encoded = model.predict(scaled_features)[0]
     
-    # Prediction ke abar Text e convert kora (High, Medium, Low)
+    # converted Prediction (High, Medium, Low)
     risk_label = encoders['peak_load_risk'].inverse_transform([prediction_encoded])[0]
     
     return {"peak_load_risk": risk_label}
