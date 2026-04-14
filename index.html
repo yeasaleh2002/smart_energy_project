@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Energy & Peak Load Predictor</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #eef2f3; display: flex; justify-content: center; padding: 30px; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); width: 100%; max-width: 550px; }
+        h2 { text-align: center; color: #2c3e50; }
+        .form-group { margin-bottom: 15px; }
+        label { font-weight: bold; display: block; font-size: 14px; color: #34495e; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #bdc3c7; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #2980b9; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px;}
+        button:hover { background: #1c5980; }
+        #result { margin-top: 20px; padding: 15px; text-align: center; font-size: 18px; font-weight: bold; border-radius: 6px; display: none; }
+        .High { background: #ffdde1; color: #c0392b; border: 1px solid #e74c3c; }
+        .Medium { background: #fdf5e6; color: #d35400; border: 1px solid #e67e22; }
+        .Low { background: #e8f8f5; color: #27ae60; border: 1px solid #2ecc71; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>⚡ Peak Load Risk Predictor</h2>
+    
+    <div class="form-group">
+        <label>Date and Time</label>
+        <input type="datetime-local" id="date_time" required>
+    </div>
+
+    <div class="form-group">
+        <label>Building Type</label>
+        <select id="building_type">
+            <option value="Industrial">Industrial</option>
+            <option value="Residential">Residential</option>
+            <option value="Commercial">Commercial</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>City Zone</label>
+        <select id="city_zone">
+            <option value="East">East</option>
+            <option value="West">West</option>
+            <option value="North">North</option>
+            <option value="South">South</option>
+            <option value="Central">Central</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Energy Consumption (kWh)</label>
+        <input type="number" id="energy_consumption" value="250">
+    </div>
+
+    <div class="form-group">
+        <label>Temperature (°C)</label>
+        <input type="number" id="temperature" value="30">
+    </div>
+
+    <div class="form-group">
+        <label>Occupancy Level</label>
+        <input type="number" id="occupancy" value="150">
+    </div>
+
+    <div class="form-group">
+        <label>Is it a Peak Hour?</label>
+        <select id="peak_hour">
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Renewable Energy Used (%)</label>
+        <input type="number" id="renewable" value="40">
+    </div>
+
+    <button onclick="predictRisk()">Predict Risk</button>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    // Set current date/time as default
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('date_time').value = now.toISOString().slice(0,16);
+
+    async function predictRisk() {
+        const dateTimeInput = document.getElementById('date_time').value;
+        const dateObj = new Date(dateTimeInput);
+
+        const data = {
+            building_type: document.getElementById('building_type').value,
+            city_zone: document.getElementById('city_zone').value,
+            energy_consumption_kwh: parseFloat(document.getElementById('energy_consumption').value),
+            temperature_celsius: parseFloat(document.getElementById('temperature').value),
+            occupancy_level: parseInt(document.getElementById('occupancy').value),
+            peak_hour: document.getElementById('peak_hour').value,
+            renewable_energy_used_percent: parseFloat(document.getElementById('renewable').value),
+            hour: dateObj.getHours(),
+            month: dateObj.getMonth() + 1, // JS months are 0-11
+            day_of_week: dateObj.getDay() // 0 (Sun) to 6 (Sat)
+        };
+
+        const resultDiv = document.getElementById('result');
+        resultDiv.style.display = 'block';
+        resultDiv.innerText = "Predicting...";
+        resultDiv.className = "";
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            const risk = result.peak_load_risk;
+
+            resultDiv.innerText = "Predicted Risk Level: " + risk;
+            resultDiv.className = risk;
+
+        } catch (error) {
+            resultDiv.innerText = "Error connecting to server!";
+            resultDiv.style.color = "red";
+            console.error(error);
+        }
+    }
+</script>
+
+</body>
+</html>
